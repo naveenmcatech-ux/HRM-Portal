@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
@@ -28,20 +28,31 @@ const formSchema = z.discriminatedUnion('role', [
   z.object({ role: z.literal('admin') }),
   z.object({ 
     role: z.literal('hr'),
-    departmentId: z.string().uuid("Must be a valid Department ID"), 
+    departmentId: z.string().min(1, "Department is required"), 
   }),
   z.object({
     role: z.literal('employee'),
     employeeId: z.string().min(1, 'Employee ID is required'),
-    departmentId: z.string().uuid("Must be a valid Department ID"),
-    designationId: z.string().uuid("Must be a valid Designation ID"),
+    departmentId: z.string().min(1, "Department is required"),
+    designationId: z.string().min(1, "Designation is required"),
   }),
 ]).and(baseSchema);
 
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface Designation {
+  id: string;
+  name: string;
+}
 
 export function RegisterForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [designations, setDesignations] = useState<Designation[]>([]);
   
   const { register } = useAuth();
   const router = useRouter();
@@ -55,7 +66,6 @@ export function RegisterForm() {
       email: '',
       password: '',
       phone: '',
-      // @ts-ignore
       role: 'employee',
       employeeId: '',
       departmentId: '',
@@ -64,12 +74,52 @@ export function RegisterForm() {
   });
 
   const role = useWatch({ control: form.control, name: 'role' });
+  const departmentId = useWatch({ control: form.control, name: 'departmentId' });
+
+  useEffect(() => {
+    async function fetchDepartments() {
+      try {
+        const response = await fetch('/api/departments');
+        if (response.ok) {
+          const data = await response.json();
+          setDepartments(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch departments", error);
+      }
+    }
+    if (role === 'hr' || role === 'employee') {
+      fetchDepartments();
+    }
+  }, [role]);
+
+  useEffect(() => {
+    async function fetchDesignations() {
+      if (!departmentId) {
+        setDesignations([]);
+        form.setValue('designationId', '');
+        return;
+      }
+      try {
+        const response = await fetch(`/api/designations?departmentId=${departmentId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setDesignations(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch designations", error);
+      }
+    }
+
+    if (role === 'employee' && departmentId) {
+      fetchDesignations();
+    }
+  }, [role, departmentId, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setError('');
     try {
-      // Construct payload based on role
       let payload: any = {
         firstName: values.firstName,
         lastName: values.lastName,
@@ -129,13 +179,7 @@ export function RegisterForm() {
           <FormField control={form.control} name="role" render={({ field }) => (
             <FormItem>
               <FormLabel>Role</FormLabel>
-              <Select onValueChange={(value) => {
-                field.onChange(value);
-                // Reset role-specific fields when role changes
-                form.setValue('employeeId', '');
-                form.setValue('departmentId', '');
-                form.setValue('designationId', '');
-              }} defaultValue={field.value}>
+              <Select onValueChange={(value) => field.onChange(value)} defaultValue={field.value}>
                 <FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
                 <SelectContent>
                   <SelectItem value="employee">Employee</SelectItem>
@@ -150,20 +194,41 @@ export function RegisterForm() {
           {role === 'employee' && (
             <>
               <FormField control={form.control} name="employeeId" render={({ field }) => (
-                <FormItem><FormLabel>Employee ID</FormLabel><FormControl><Input placeholder="EMP12345" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Employee ID</FormLabel><FormControl><Input placeholder="EMP12345" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="departmentId" render={({ field }) => (
-                <FormItem><FormLabel>Department ID</FormLabel><FormControl><Input placeholder="Enter Department UUID" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Department</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Select a department" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {departments.map(dep => <SelectItem key={dep.id} value={dep.id}>{dep.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="designationId" render={({ field }) => (
-                <FormItem><FormLabel>Designation ID</FormLabel><FormControl><Input placeholder="Enter Designation UUID" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Designation</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!departmentId || designations.length === 0}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Select a designation" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {designations.map(des => <SelectItem key={des.id} value={des.id}>{des.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage /></FormItem>
               )}/>
             </>
           )}
 
           {role === 'hr' && (
              <FormField control={form.control} name="departmentId" render={({ field }) => (
-                <FormItem><FormLabel>Department ID</FormLabel><FormControl><Input placeholder="Enter Department UUID" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Department</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl><SelectTrigger><SelectValue placeholder="Select a department" /></SelectTrigger></FormControl>
+                <SelectContent>
+                  {departments.map(dep => <SelectItem key={dep.id} value={dep.id}>{dep.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <FormMessage /></FormItem>
              )}/>
           )}
 

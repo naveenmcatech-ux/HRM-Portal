@@ -3,11 +3,13 @@ import { db } from '@/lib/database/db';
 import { users, userProfiles, employees, hrManagers, departments, designations } from '@/lib/database/schema';
 import { verifyToken } from '@/lib/auth/utils';
 import { eq, and } from 'drizzle-orm';
-import { cookies } from 'next/headers';
+import * as jwt from 'jsonwebtoken';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  try {
-    const token = cookies().get('auth-token')?.value;
+  try {  
+    const token = request.cookies.get('auth-token')?.value;
 
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -78,5 +80,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-// This import is necessary for the catch block to work correctly with JWT error types
-import * as jwt from 'jsonwebtoken';
