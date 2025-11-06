@@ -2,18 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth/utils';
 
-// Define role hierarchy for easier checking
-const roleHierarchy = {
-  admin: ['admin', 'hr', 'employee'],
-  hr: ['hr', 'employee'],
-  employee: ['employee'],
-};
-
-function isAuthorized(userRole: 'admin' | 'hr' | 'employee', requiredRoles: string[]): boolean {
-  const allowedRoles = roleHierarchy[userRole] || [];
-  return requiredRoles.some(role => allowedRoles.includes(role));
-}
-
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
   const { pathname } = request.nextUrl;
@@ -41,7 +29,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const decoded: { userId: string; role: 'admin' | 'hr' | 'employee' } = await verifyToken(token);
+    const decoded: { userId: string; role: 'admin' | 'hr' | 'employee' } = verifyToken(token);
     const userRole = decoded.role;
     
     // Add user details to request headers for use in server components
@@ -49,25 +37,22 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-user-id', decoded.userId);
     requestHeaders.set('x-user-role', userRole);
 
-    if (pathname.startsWith('/admin') && !isAuthorized(userRole, ['admin'])) {
+    if (pathname.startsWith('/admin') && userRole !== 'admin') {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
 
-    if (pathname.startsWith('/hr') && !isAuthorized(userRole, ['admin', 'hr'])) {
+    if (pathname.startsWith('/hr') && !['admin', 'hr'].includes(userRole)) {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
     
-    // Employee dashboard is accessible to all authenticated users
-    if (pathname.startsWith('/employee') && !isAuthorized(userRole, ['admin', 'hr', 'employee'])) {
+    if (pathname.startsWith('/employee') && !['admin', 'hr', 'employee'].includes(userRole)) {
         return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
     
-    // General dashboard accessible to all authenticated users
-    if (pathname.startsWith('/dashboard') && !isAuthorized(userRole, ['admin', 'hr', 'employee'])) {
+    if (pathname.startsWith('/dashboard') && !['admin', 'hr', 'employee'].includes(userRole)) {
       return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
     
-
     return NextResponse.next({
       request: {
         headers: requestHeaders,
@@ -83,13 +68,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/admin/:path*',
+    '/hr/:path*',
+    '/employee/:path*',
+    '/dashboard/:path*',
+    '/',
+    '/((?!api|_next/static|_next/image|favicon.ico|login|register|unauthorized).*)'
   ],
 };

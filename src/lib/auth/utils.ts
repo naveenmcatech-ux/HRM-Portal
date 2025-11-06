@@ -15,13 +15,6 @@ export const generateToken = (userId: string, role: string): string => {
   return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' });
 };
 
-export const verifyToken = (token: string): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve(decoded);
-    });
-  });
+export const verifyToken = (token: string): any => {
+    return jwt.verify(token, JWT_SECRET);
 };

@@ -83,7 +83,7 @@ export const usersRelations = relations(users, ({ one }) => ({
   }),
 }));
 
-export const employeesRelations = relations(employees, ({ one }) => ({
+export const employeesRelations = relations(employees, ({ one, many }) => ({
   user: one(users, {
     fields: [employees.userId],
     references: [users.id],
@@ -101,9 +101,19 @@ export const employeesRelations = relations(employees, ({ one }) => ({
     references: [employees.id],
     relationName: 'manager'
   }),
+  reports: many(employees, {
+    relationName: 'manager'
+  })
 }));
 
 export const departmentsRelations = relations(departments, ({ many }) => ({
     employees: many(employees),
     designations: many(designations),
+}));
+
+export const designationsRelations = relations(designations, ({ one }) => ({
+  department: one(departments, {
+    fields: [designations.departmentId],
+    references: [departments.id],
+  }),
 }));

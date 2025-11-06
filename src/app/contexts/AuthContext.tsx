@@ -43,6 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(data.user);
         } else {
           setUser(null);
+          // If not on a public path, redirect to login
+          if (!['/login', '/register'].includes(window.location.pathname)) {
+            // router.push('/login');
+          }
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -66,8 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(errorData.error || 'Login failed');
     }
 
-    const { user: loggedInUser } = await response.json();
+    const { user: loggedInUser, token } = await response.json();
     setUser(loggedInUser);
+    // The token is now managed by an httpOnly cookie, so we don't need to store it in localStorage.
     return loggedInUser;
   };
 
@@ -83,8 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(errorData.error || 'Registration failed');
     }
     
-    const { user: registeredUser } = await response.json();
+    const { user: registeredUser, token } = await response.json();
     setUser(registeredUser);
+    // The token is now managed by an httpOnly cookie.
     return registeredUser;
   }
 

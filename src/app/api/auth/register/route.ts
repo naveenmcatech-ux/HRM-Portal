@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (existingUser.length > 0) {
-      return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 });
+      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
     }
 
     const hashedPassword = await hashPassword(password);
@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
         email: result.email,
         role: result.role,
       },
+      token,
     });
 
   } catch (error) {
