@@ -69,7 +69,26 @@ export function RegisterForm() {
     setIsLoading(true);
     setError('');
     try {
-      await register(values);
+      // Construct payload based on role
+      let payload: any = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        password: values.password,
+        phone: values.phone,
+        role: values.role,
+      };
+
+      if (values.role === 'employee') {
+        payload.employeeId = values.employeeId;
+        payload.departmentId = values.departmentId;
+        payload.designationId = values.designationId;
+      } else if (values.role === 'hr') {
+        payload.departmentId = values.departmentId;
+      }
+
+      await register(payload);
+      
       toast({
         title: "Registration Successful",
         description: `Account for ${values.email} has been created.`,
@@ -110,7 +129,13 @@ export function RegisterForm() {
           <FormField control={form.control} name="role" render={({ field }) => (
             <FormItem>
               <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={(value) => {
+                field.onChange(value);
+                // Reset role-specific fields when role changes
+                form.setValue('employeeId', '');
+                form.setValue('departmentId', '');
+                form.setValue('designationId', '');
+              }} defaultValue={field.value}>
                 <FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
                 <SelectContent>
                   <SelectItem value="employee">Employee</SelectItem>

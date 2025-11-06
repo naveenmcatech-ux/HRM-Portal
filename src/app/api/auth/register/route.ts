@@ -62,7 +62,6 @@ export async function POST(request: NextRequest) {
          const { employeeId, departmentId, designationId } = body;
          if (!employeeId || !departmentId || !designationId) {
             tx.rollback();
-            // This throw will be caught by the outer try-catch block
             throw new Error('Missing fields for employee role');
          }
         await tx
@@ -88,8 +87,7 @@ export async function POST(request: NextRequest) {
             isActive: true,
           });
       }
-      // No extra table for 'admin' role, user and profile are enough.
-
+      
       return user;
     });
 
@@ -115,6 +113,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Registration error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    // Ensure we always return JSON, even on uncaught errors
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
