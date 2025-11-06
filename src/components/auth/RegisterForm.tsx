@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
@@ -54,6 +55,9 @@ export function RegisterForm() {
       email: '',
       password: '',
       phone: '',
+      employeeId: '',
+      departmentId: '',
+      designationId: '',
     },
   });
 
