@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database/db';
 import { users, userProfiles, employees, hrManagers } from '@/lib/database/schema';
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
 
       if (role === 'employee') {
          if (!employeeId || !departmentId || !designationId) {
+            tx.rollback();
             throw new Error('Missing fields for employee role');
          }
         await tx
@@ -72,10 +74,9 @@ export async function POST(request: NextRequest) {
             designationId,
             isActive: true,
           });
-      }
-
-      if (role === 'hr') {
+      } else if (role === 'hr') {
         if (!departmentId) {
+            tx.rollback();
             throw new Error('Missing department for HR role');
         }
         await tx
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
             isActive: true,
           });
       }
+      // No extra table for 'admin' role, user and profile are enough.
 
       return user;
     });

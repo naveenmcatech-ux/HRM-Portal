@@ -55,6 +55,8 @@ export function RegisterForm() {
       email: '',
       password: '',
       phone: '',
+      // @ts-ignore
+      role: 'employee',
       employeeId: '',
       departmentId: '',
       designationId: '',
@@ -123,20 +125,20 @@ export function RegisterForm() {
           {role === 'employee' && (
             <>
               <FormField control={form.control} name="employeeId" render={({ field }) => (
-                <FormItem><FormLabel>Employee ID</FormLabel><FormControl><Input placeholder="EMP12345" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Employee ID</FormLabel><FormControl><Input placeholder="EMP12345" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="departmentId" render={({ field }) => (
-                <FormItem><FormLabel>Department ID</FormLabel><FormControl><Input placeholder="Enter Department UUID" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Department ID</FormLabel><FormControl><Input placeholder="Enter Department UUID" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="designationId" render={({ field }) => (
-                <FormItem><FormLabel>Designation ID</FormLabel><FormControl><Input placeholder="Enter Designation UUID" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Designation ID</FormLabel><FormControl><Input placeholder="Enter Designation UUID" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
               )}/>
             </>
           )}
 
           {role === 'hr' && (
              <FormField control={form.control} name="departmentId" render={({ field }) => (
-                <FormItem><FormLabel>Department ID</FormLabel><FormControl><Input placeholder="Enter Department UUID" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Department ID</FormLabel><FormControl><Input placeholder="Enter Department UUID" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
              )}/>
           )}
 
