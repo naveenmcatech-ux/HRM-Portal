@@ -8,17 +8,15 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json();
     const { 
       email, 
       password, 
       role, 
       firstName, 
       lastName, 
-      phone,
-      employeeId,
-      departmentId,
-      designationId
-    } = await request.json();
+      phone
+    } = body;
 
     if (!email || !password || !role || !firstName || !lastName) {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -61,8 +59,10 @@ export async function POST(request: NextRequest) {
         });
 
       if (role === 'employee') {
+         const { employeeId, departmentId, designationId } = body;
          if (!employeeId || !departmentId || !designationId) {
             tx.rollback();
+            // This throw will be caught by the outer try-catch block
             throw new Error('Missing fields for employee role');
          }
         await tx
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
             isActive: true,
           });
       } else if (role === 'hr') {
+        const { departmentId } = body;
         if (!departmentId) {
             tx.rollback();
             throw new Error('Missing department for HR role');
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
         role: result.role,
       },
       token,
-    });
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Registration error:', error);
