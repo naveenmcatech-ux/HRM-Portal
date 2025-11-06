@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       if (role === 'employee') {
          const { employeeId, departmentId, designationId } = body;
          if (!employeeId || !departmentId || !designationId) {
-            tx.rollback();
+            // This will cause the transaction to rollback.
             throw new Error('Missing fields for employee role');
          }
         await tx
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       } else if (role === 'hr') {
         const { departmentId } = body;
         if (!departmentId) {
-            tx.rollback();
+            // This will cause the transaction to rollback.
             throw new Error('Missing department for HR role');
         }
         await tx
@@ -87,6 +87,8 @@ export async function POST(request: NextRequest) {
             isActive: true,
           });
       }
+      
+      // No extra action needed for 'admin' role beyond user and profile creation
       
       return user;
     });
@@ -114,6 +116,6 @@ export async function POST(request: NextRequest) {
     console.error('Registration error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     // Ensure we always return JSON, even on uncaught errors
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 }
