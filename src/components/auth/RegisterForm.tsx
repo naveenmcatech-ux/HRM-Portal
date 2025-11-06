@@ -1,6 +1,5 @@
-
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
@@ -28,31 +27,20 @@ const formSchema = z.discriminatedUnion('role', [
   z.object({ role: z.literal('admin') }),
   z.object({ 
     role: z.literal('hr'),
-    departmentId: z.string().min(1, "Department is required"), 
+    departmentId: z.string().min(1, "Department ID is required"), 
   }),
   z.object({
     role: z.literal('employee'),
     employeeId: z.string().min(1, 'Employee ID is required'),
-    departmentId: z.string().min(1, "Department is required"),
-    designationId: z.string().min(1, "Designation is required"),
+    departmentId: z.string().min(1, "Department ID is required"),
+    designationId: z.string().min(1, "Designation ID is required"),
   }),
 ]).and(baseSchema);
 
-interface Department {
-  id: string;
-  name: string;
-}
-
-interface Designation {
-  id: string;
-  name: string;
-}
 
 export function RegisterForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [designations, setDesignations] = useState<Designation[]>([]);
   
   const { register } = useAuth();
   const router = useRouter();
@@ -74,70 +62,12 @@ export function RegisterForm() {
   });
 
   const role = useWatch({ control: form.control, name: 'role' });
-  const departmentId = useWatch({ control: form.control, name: 'departmentId' });
-
-  useEffect(() => {
-    async function fetchDepartments() {
-      try {
-        const response = await fetch('/api/departments');
-        if (response.ok) {
-          const data = await response.json();
-          setDepartments(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch departments", error);
-      }
-    }
-    if (role === 'hr' || role === 'employee') {
-      fetchDepartments();
-    }
-  }, [role]);
-
-  useEffect(() => {
-    async function fetchDesignations() {
-      if (!departmentId) {
-        setDesignations([]);
-        form.setValue('designationId', '');
-        return;
-      }
-      try {
-        const response = await fetch(`/api/designations?departmentId=${departmentId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setDesignations(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch designations", error);
-      }
-    }
-
-    if (role === 'employee' && departmentId) {
-      fetchDesignations();
-    }
-  }, [role, departmentId, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setError('');
     try {
-      let payload: any = {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        password: values.password,
-        phone: values.phone,
-        role: values.role,
-      };
-
-      if (values.role === 'employee') {
-        payload.employeeId = values.employeeId;
-        payload.departmentId = values.departmentId;
-        payload.designationId = values.designationId;
-      } else if (values.role === 'hr') {
-        payload.departmentId = values.departmentId;
-      }
-
-      await register(payload);
+      await register(values);
       
       toast({
         title: "Registration Successful",
@@ -197,38 +127,17 @@ export function RegisterForm() {
                 <FormItem><FormLabel>Employee ID</FormLabel><FormControl><Input placeholder="EMP12345" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="departmentId" render={({ field }) => (
-                <FormItem><FormLabel>Department</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select a department" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {departments.map(dep => <SelectItem key={dep.id} value={dep.id}>{dep.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <FormMessage /></FormItem>
+                <FormItem><FormLabel>Department ID</FormLabel><FormControl><Input placeholder="Enter Department ID" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="designationId" render={({ field }) => (
-                <FormItem><FormLabel>Designation</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!departmentId || designations.length === 0}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select a designation" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {designations.map(des => <SelectItem key={des.id} value={des.id}>{des.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <FormMessage /></FormItem>
+                <FormItem><FormLabel>Designation ID</FormLabel><FormControl><Input placeholder="Enter Designation ID" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
             </>
           )}
 
           {role === 'hr' && (
              <FormField control={form.control} name="departmentId" render={({ field }) => (
-              <FormItem><FormLabel>Department</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Select a department" /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {departments.map(dep => <SelectItem key={dep.id} value={dep.id}>{dep.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FormMessage /></FormItem>
+              <FormItem><FormLabel>Department ID</FormLabel><FormControl><Input placeholder="Enter Department ID" {...field} /></FormControl><FormMessage /></FormItem>
              )}/>
           )}
 
