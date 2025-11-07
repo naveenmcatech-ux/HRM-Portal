@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS "audit_logs" (
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "departments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"description" text,
+	"hr_manager_id" uuid,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "departments_name_unique" UNIQUE("name")
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "leave_balances" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
@@ -96,20 +106,24 @@ CREATE TABLE IF NOT EXISTS "system_settings" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-DROP TABLE "designations";--> statement-breakpoint
-DROP TABLE "employees";--> statement-breakpoint
-DROP TABLE "hr_managers";--> statement-breakpoint
-DROP TABLE "user_profiles";--> statement-breakpoint
-ALTER TABLE "users" ALTER COLUMN "role" SET DATA TYPE varchar(20);--> statement-breakpoint
-ALTER TABLE "departments" ADD COLUMN "hr_manager_id" uuid;--> statement-breakpoint
-ALTER TABLE "departments" ADD COLUMN "updated_at" timestamp DEFAULT now();--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "auth_id" uuid;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "username" varchar(100) NOT NULL;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "first_name" varchar(100) NOT NULL;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "last_name" varchar(100) NOT NULL;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "department_id" uuid;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "position" varchar(100);--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "phone" varchar(20);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "users" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"auth_id" uuid,
+	"email" varchar(255) NOT NULL,
+	"username" varchar(100) NOT NULL,
+	"first_name" varchar(100) NOT NULL,
+	"last_name" varchar(100) NOT NULL,
+	"role" varchar(20) NOT NULL,
+	"department_id" uuid,
+	"position" varchar(100),
+	"phone" varchar(20),
+	"is_active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "users_email_unique" UNIQUE("email"),
+	CONSTRAINT "users_username_unique" UNIQUE("username")
+);
+--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "attendance" ADD CONSTRAINT "attendance_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
@@ -118,6 +132,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "departments" ADD CONSTRAINT "departments_hr_manager_id_users_id_fk" FOREIGN KEY ("hr_manager_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -177,19 +197,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "departments" ADD CONSTRAINT "departments_hr_manager_id_users_id_fk" FOREIGN KEY ("hr_manager_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "users" ADD CONSTRAINT "users_department_id_departments_id_fk" FOREIGN KEY ("department_id") REFERENCES "public"."departments"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
---> statement-breakpoint
-ALTER TABLE "departments" DROP COLUMN IF EXISTS "is_active";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN IF EXISTS "password";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN IF EXISTS "last_login";--> statement-breakpoint
-ALTER TABLE "departments" ADD CONSTRAINT "departments_name_unique" UNIQUE("name");--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_username_unique" UNIQUE("username");

@@ -13,12 +13,6 @@ const db = drizzle(sql);
 
 async function main() {
   try {
-    console.log('Resetting database...');
-    // Use the postgres client directly to execute raw SQL for dropping/creating schema
-    await sql.unsafe('DROP SCHEMA public CASCADE;');
-    await sql.unsafe('CREATE SCHEMA public;');
-    console.log('Database reset complete.');
-
     console.log('Running database migrations...');
     await migrate(db, { migrationsFolder: 'drizzle' });
     console.log('Migrations completed successfully!');
