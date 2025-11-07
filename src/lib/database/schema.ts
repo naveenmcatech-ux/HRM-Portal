@@ -10,7 +10,7 @@ export const users = pgTable('users', {
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
   role: varchar('role', { length: 20, enum: ['admin', 'hr', 'employee'] }).notNull(),
-  departmentId: uuid('department_id').references(() => departments.id),
+  departmentId: uuid('department_id').references(() => departments.id, { onUpdate: 'no action', onDelete: 'no action' }),
   position: varchar('position', { length: 100 }),
   phone: varchar('phone', { length: 20 }),
   isActive: boolean('is_active').default(true),
@@ -23,7 +23,7 @@ export const departments = pgTable('departments', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 100 }).notNull().unique(),
   description: text('description'),
-  hrManagerId: uuid('hr_manager_id').references(() => users.id),
+  hrManagerId: uuid('hr_manager_id').references(() => users.id, { onUpdate: 'no action', onDelete: 'no action' }),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -33,7 +33,7 @@ export const projects = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 200 }).notNull(),
   description: text('description'),
-  departmentId: uuid('department_id').references(() => departments.id),
+  departmentId: uuid('department_id').references(() => departments.id, { onUpdate: 'no action', onDelete: 'no action' }),
   startDate: date('start_date'),
   endDate: date('end_date'),
   status: varchar('status', { length: 20, enum: ['planning', 'active', 'completed', 'on_hold'] }).default('planning'),
@@ -45,8 +45,8 @@ export const projects = pgTable('projects', {
 // Project assignments
 export const projectAssignments = pgTable('project_assignments', {
   id: uuid('id').primaryKey().defaultRandom(),
-  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade', onUpdate: 'no action' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'no action' }),
   assignedDate: date('assigned_date').defaultNow(),
   role: varchar('role', { length: 100 }),
 });
@@ -54,7 +54,7 @@ export const projectAssignments = pgTable('project_assignments', {
 // Attendance table
 export const attendance = pgTable('attendance', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'no action' }),
   date: date('date').notNull(),
   checkIn: time('check_in'),
   checkOut: time('check_out'),
@@ -77,13 +77,13 @@ export const leaveTypes = pgTable('leave_types', {
 // Leave requests table
 export const leaveRequests = pgTable('leave_requests', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
-  leaveTypeId: uuid('leave_type_id').references(() => leaveTypes.id),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'no action' }),
+  leaveTypeId: uuid('leave_type_id').references(() => leaveTypes.id, { onUpdate: 'no action', onDelete: 'no action' }),
   startDate: date('start_date').notNull(),
   endDate: date('end_date').notNull(),
   reason: text('reason'),
   status: varchar('status', { length: 20, enum: ['pending', 'approved', 'rejected'] }).default('pending'),
-  approvedBy: uuid('approved_by').references(() => users.id),
+  approvedBy: uuid('approved_by').references(() => users.id, { onUpdate: 'no action', onDelete: 'no action' }),
   approvedAt: timestamp('approved_at'),
   createdAt: timestamp('created_at').defaultNow(),
 });
@@ -91,8 +91,8 @@ export const leaveRequests = pgTable('leave_requests', {
 // Leave balances table
 export const leaveBalances = pgTable('leave_balances', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
-  leaveTypeId: uuid('leave_type_id').references(() => leaveTypes.id),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'no action' }),
+  leaveTypeId: uuid('leave_type_id').references(() => leaveTypes.id, { onUpdate: 'no action', onDelete: 'no action' }),
   year: integer('year').notNull(),
   allocatedDays: integer('allocated_days').notNull(),
   usedDays: integer('used_days').default(0),
@@ -113,7 +113,7 @@ export const systemSettings = pgTable('system_settings', {
 // Audit logs table
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id),
+  userId: uuid('user_id').references(() => users.id, { onUpdate: 'no action', onDelete: 'no action' }),
   action: varchar('action', { length: 100 }).notNull(),
   tableName: varchar('table_name', { length: 100 }),
   recordId: uuid('record_id'),
@@ -127,7 +127,7 @@ export const auditLogs = pgTable('audit_logs', {
 // Notifications table
 export const notifications = pgTable('notifications', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'no action' }),
   title: varchar('title', { length: 255 }).notNull(),
   message: text('message').notNull(),
   type: varchar('type', { length: 50, enum: ['info', 'success', 'warning', 'error'] }),
