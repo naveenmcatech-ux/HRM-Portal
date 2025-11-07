@@ -3,16 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Login | SynergyHR Portal',
-    description: 'Log in to your SynergyHR account.',
+    title: 'Login | HRMS Portal',
+    description: 'Log in to your HRMS account.',
 };
 
 export default function LoginPage() {
   return (
     <Card className="w-full max-w-md shadow-lg">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-headline">Welcome Back</CardTitle>
-        <CardDescription>Sign in to access your HR dashboard</CardDescription>
+        <CardTitle className="text-2xl font-headline">HRMS Portal Login</CardTitle>
+        <CardDescription>Sign in to access your dashboard</CardDescription>
       </CardHeader>
       <CardContent>
         <LoginForm />

@@ -1,20 +1,21 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { createClient } from '@supabase/supabase-js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const hashPassword = async (password: string): Promise<string> => {
-  return await bcrypt.hash(password, 12);
-};
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const verifyPassword = async (password: string, hashedPassword: string): Promise<boolean> => {
-  return await bcrypt.compare(password, hashedPassword);
-};
+export async function signIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  
+  if (error) throw error;
+  return data;
+}
 
-export const generateToken = (userId: string, role: string): string => {
-  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' });
-};
-
-export const verifyToken = (token: string): any => {
-    return jwt.verify(token, JWT_SECRET);
-};
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}

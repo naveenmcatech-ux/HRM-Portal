@@ -1,69 +1,32 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from './lib/auth/utils';
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('auth-token')?.value;
+  const sessionCookie = request.cookies.get('hrms-session');
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ['/login', '/register', '/unauthorized'];
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  const publicRoutes = ['/login', '/unauthorized'];
+  if (publicRoutes.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // Redirect root to login if not authenticated, or dashboard if authenticated
+  // Redirect root to appropriate page
   if (pathname === '/') {
-    if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url));
+    if (sessionCookie?.value === 'admin-authenticated') {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
-    try {
-      await verifyToken(token);
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    } catch (error) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  if (!token) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
-
-  try {
-    const decoded: { userId: string; role: 'admin' | 'hr' | 'employee' } = verifyToken(token);
-    const userRole = decoded.role;
-    
-    // Add user details to request headers for use in server components
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-user-id', decoded.userId);
-    requestHeaders.set('x-user-role', userRole);
-
-    if (pathname.startsWith('/admin') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+  
+  // For now, only admin dashboard is protected by this logic.
+  // Supabase handles auth for other roles on the client-side.
+  if (pathname.startsWith('/admin')) {
+    if (sessionCookie?.value !== 'admin-authenticated') {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
-
-    if (pathname.startsWith('/hr') && !['admin', 'hr'].includes(userRole)) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
-    }
-    
-    if (pathname.startsWith('/employee') && !['admin', 'hr', 'employee'].includes(userRole)) {
-        return NextResponse.redirect(new URL('/unauthorized', request.url));
-    }
-    
-    if (pathname.startsWith('/dashboard') && !['admin', 'hr', 'employee'].includes(userRole)) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
-    }
-    
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
-
-  } catch (error) {
-    const response = NextResponse.redirect(new URL('/login', request.url));
-    response.cookies.delete('auth-token');
-    return response;
   }
+
+  return NextResponse.next();
 }
 
 export const config = {

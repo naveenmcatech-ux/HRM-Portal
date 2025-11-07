@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { useAuth } from '@/app/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,11 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  username: z.string().min(1, { message: 'Username or Email is required.' }),
   password: z.string().min(1, { message: 'Password is required.' }),
 });
 
@@ -22,14 +20,13 @@ export function LoginForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
@@ -38,13 +35,30 @@ export function LoginForm() {
     setIsLoading(true);
     setError('');
     try {
-      await login(values);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Login failed');
+      }
+
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
-      router.push('/dashboard');
-      router.refresh(); // Ensure layout re-renders with user state
+
+      if (data.user?.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        // Redirect other roles appropriately
+        router.push('/dashboard'); 
+      }
+      router.refresh();
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
     } finally {
@@ -65,12 +79,12 @@ export function LoginForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="email"
+            name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email Address</FormLabel>
+                <FormLabel>Username or Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="name@company.com" {...field} />
+                  <Input placeholder="admin or name@company.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -94,12 +108,6 @@ export function LoginForm() {
           </Button>
         </form>
       </Form>
-      <div className="mt-4 text-center text-sm">
-        Don&apos;t have an account?{' '}
-        <Link href="/register" className="underline text-primary">
-          Register
-        </Link>
-      </div>
     </>
   );
 }

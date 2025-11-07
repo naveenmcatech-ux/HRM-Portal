@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
 import './globals.css';
-import { AuthProvider } from '@/app/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 
 const inter = Inter({
@@ -15,8 +14,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'SynergyHR Portal',
-  description: 'Human Resource Management System',
+  title: 'HRMS Admin Portal',
+  description: 'A full-stack HR Management System',
 };
 
 export default function RootLayout({
@@ -26,11 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} font-body antialiased`}>
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} font-body antialiased bg-gray-50`}>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuth } from '@/app/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,14 +12,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User as UserIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
-  const { user, logout } = useAuth();
-
-  if (!user) {
-    return null;
+  const router = useRouter();
+  
+  // This is now hardcoded for the admin user as per the new login flow.
+  // In a full Supabase implementation, you'd fetch the user session here.
+  const user = {
+    firstName: 'System',
+    lastName: 'Administrator',
+    email: 'admin@hrms.com'
   }
 
+  const handleLogout = async () => {
+    // In a full Supabase implementation, you would call signOut() from lib/auth
+    // For now, we'll clear the session cookie via an API route if needed,
+    // but a simple redirect will suffice for the hardcoded admin.
+    // For simplicity, we just navigate to login.
+    router.push('/login');
+  };
+  
   const getInitials = (firstName?: string, lastName?: string) => {
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
   };
@@ -30,7 +42,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.avatar} alt="User avatar" />
+            <AvatarImage src="" alt="User avatar" />
             <AvatarFallback className="bg-primary text-primary-foreground font-bold">
               {getInitials(user.firstName, user.lastName)}
             </AvatarFallback>
@@ -56,7 +68,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
