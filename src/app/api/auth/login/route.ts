@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { signIn } from '@/lib/auth/utils';
 import { db } from '@/lib/database/db';
