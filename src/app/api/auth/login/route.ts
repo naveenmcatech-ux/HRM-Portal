@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { signIn } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { signIn } from '@/lib/auth/utils';
+import { db } from '@/lib/database/db';
+import { users } from '@/lib/database/schema';
 import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
@@ -11,22 +11,22 @@ export async function POST(request: NextRequest) {
     // Default admin credentials
     if (username === 'Admin' && password === 'Admin123') {
       // Check if admin user exists, if not create it
-      const existingAdmin = await db
+      let adminUser = await db
         .select()
         .from(users)
         .where(eq(users.username, 'Admin'))
         .limit(1);
 
-      if (existingAdmin.length === 0) {
+      if (adminUser.length === 0) {
         // Create admin user
-        await db.insert(users).values({
-          username: 'Admin', // Added username
+        const newAdmin = await db.insert(users).values({
+          username: 'Admin',
           email: 'admin@hrms.com',
           firstName: 'System',
           lastName: 'Administrator',
           role: 'admin',
-          isActive: true,
-        });
+        }).returning();
+        adminUser = newAdmin;
       }
 
       const response = NextResponse.json({ 
