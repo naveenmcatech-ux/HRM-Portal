@@ -13,12 +13,21 @@ const db = drizzle(sql);
 
 async function main() {
   try {
+    console.log('Resetting database...');
+    // Drop the entire public schema to start fresh
+    await db.execute(sql`DROP SCHEMA public CASCADE;`);
+    await db.execute(sql`CREATE SCHEMA public;`);
+    console.log('Database reset complete.');
+
     console.log('Running database migrations...');
     await migrate(db, { migrationsFolder: 'drizzle' });
     console.log('Migrations completed successfully!');
+    
+    await sql.end();
     process.exit(0);
   } catch (error) {
     console.error('Error running migrations:', error);
+    await sql.end();
     process.exit(1);
   }
 }

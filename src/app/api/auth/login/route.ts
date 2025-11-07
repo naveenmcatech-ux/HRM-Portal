@@ -12,13 +12,15 @@ export async function POST(request: NextRequest) {
     // Default admin credentials
     if (username === 'Admin' && password === 'Admin123') {
       // Check if admin user exists, if not create it
-      let adminUser = await db
+      let adminUserResult = await db
         .select()
         .from(users)
         .where(eq(users.username, 'Admin'))
         .limit(1);
 
-      if (adminUser.length === 0) {
+      let adminUser;
+
+      if (adminUserResult.length === 0) {
         // Create admin user
         const newAdmin = await db.insert(users).values({
           username: 'Admin',
@@ -27,17 +29,19 @@ export async function POST(request: NextRequest) {
           lastName: 'Administrator',
           role: 'admin',
         }).returning();
-        adminUser = newAdmin;
+        adminUser = newAdmin[0];
+      } else {
+        adminUser = adminUserResult[0];
       }
 
       const response = NextResponse.json({ 
         success: true, 
         message: 'Login successful',
         user: {
-          username: 'Admin',
-          role: 'admin',
-          firstName: 'System',
-          lastName: 'Administrator'
+          username: adminUser.username,
+          role: adminUser.role,
+          firstName: adminUser.firstName,
+          lastName: adminUser.lastName
         }
       });
 
