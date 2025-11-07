@@ -8,6 +8,13 @@
       "when": 1762439613027,
       "tag": "0000_yellow_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1762494764901,
+      "tag": "0001_gray_cassandra_nova",
+      "breakpoints": true
     }
   ]
 }
