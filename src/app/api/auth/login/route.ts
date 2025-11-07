@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { signIn } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { supabase } from '@/lib/auth/utils';
-
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +20,7 @@ export async function POST(request: NextRequest) {
       if (existingAdmin.length === 0) {
         // Create admin user
         await db.insert(users).values({
-          username: 'Admin',
+          username: 'Admin', // Added username
           email: 'admin@hrms.com',
           firstName: 'System',
           lastName: 'Administrator',
@@ -30,8 +29,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // In a real app, you'd use proper authentication
-      // For now, we'll create a session
       const response = NextResponse.json({ 
         success: true, 
         message: 'Login successful',
@@ -53,51 +50,12 @@ export async function POST(request: NextRequest) {
 
       return response;
     }
-    
-    // For other users, try to sign in with Supabase
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email: username, // Assuming username is email for non-admin
-        password,
-    });
 
-    if (error || !data.user) {
-        return NextResponse.json(
-            { success: false, message: error?.message || 'Invalid credentials' },
-            { status: 401 }
-        );
-    }
-
-    const userData = await db.select().from(users).where(eq(users.authId, data.user.id)).limit(1);
-    
-    if (userData.length === 0) {
-        return NextResponse.json(
-            { success: false, message: 'User not found in application database.' },
-            { status: 404 }
-        );
-    }
-
-    const response = NextResponse.json({
-        success: true,
-        message: 'Login successful',
-        user: userData[0]
-    });
-    
-    // Set cookies from Supabase session
-    const session = data.session;
-    if (session) {
-        response.cookies.set(
-            `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split('.')[0]}-auth-token`,
-             JSON.stringify([session.access_token, session.refresh_token]), {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-            maxAge: session.expires_in
-        });
-    }
-
-    return response;
-
+    // Placeholder for other user authentication
+    return NextResponse.json(
+      { success: false, message: 'Invalid credentials' },
+      { status: 401 }
+    );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Login failed';
     return NextResponse.json(
