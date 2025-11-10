@@ -1,7 +1,7 @@
 // app/api/admin/projects/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database/db';
-import { projects, departments, employees, userProfiles, users, projectMembers } from '@/lib/database/schema';
+import { projects, departments, employees, userProfiles, users, projectTeam } from '@/lib/database/schema';
 import { eq, and, desc, count, sql } from 'drizzle-orm';
 import { verifyToken } from '@/lib/auth/utils';
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         priority: projects.priority,
         budget: projects.budget,
         progress: projects.progress,
-        teamMembers: count(projectMembers.id),
+        teamMembers: count(projectTeam.id),
         createdAt: projects.createdAt,
       })
       .from(projects)
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(employees, eq(projects.managerId, employees.id))
       .leftJoin(users, eq(employees.userId, users.id))
       .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
-      .leftJoin(projectMembers, eq(projects.id, projectMembers.projectId))
+      .leftJoin(projectTeam, eq(projects.id, projectTeam.projectId))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .groupBy(
         projects.id,
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

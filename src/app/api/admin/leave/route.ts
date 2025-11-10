@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database/db';
 import { leaveRequests, employees, userProfiles, departments, users } from '@/lib/database/schema';
-import { eq, and, gte, lte, desc, count, sql } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, SQL } from 'drizzle-orm';
 import { verifyToken } from '@/lib/auth/utils';
 
 // GET - Fetch leave requests
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type');
     const date = searchParams.get('date');
 
-    let whereConditions = [];
+    const whereConditions: (SQL | undefined)[] = [];
 
     if (status) {
       whereConditions.push(eq(leaveRequests.status, status));
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       .innerJoin(users, eq(employees.userId, users.id))
       .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
       .leftJoin(departments, eq(employees.departmentId, departments.id))
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .where(and(...whereConditions))
       .orderBy(desc(leaveRequests.createdAt));
 
     return NextResponse.json({

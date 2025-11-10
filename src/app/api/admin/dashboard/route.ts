@@ -168,8 +168,8 @@ async function getAttendanceTrend(startDate: Date, endDate: Date) {
     const trend = await db
       .select({
         date: attendance.date,
-        present: count(attendance.id.filter(attendance.status === 'present')),
-        absent: count(attendance.id.filter(attendance.status === 'absent')),
+        present: sql<number>`count(CASE WHEN ${attendance.status} = 'present' THEN 1 END)`.mapWith(Number),
+        absent: sql<number>`count(CASE WHEN ${attendance.status} = 'absent' THEN 1 END)`.mapWith(Number),
       })
       .from(attendance)
       .where(
@@ -285,16 +285,12 @@ async function getUpcomingEvents() {
 }
 
 // Helper function to calculate attendance rate
-function calculateAttendanceTrend(attendanceTrend: any[]): number {
+function calculateAttendanceRate(attendanceTrend: any[]): number {
   if (attendanceTrend.length === 0) return 0;
   
   const totalPresent = attendanceTrend.reduce((sum, day) => sum + day.present, 0);
-  const totalEmployees = attendanceTrend.reduce((sum, day) => sum + day.present + day.absent, 0);
-  
-  return totalEmployees > 0 ? Math.round((totalPresent / totalEmployees) * 100) : 0;
-}
+  const totalAbsent = attendanceTrend.reduce((sum, day) => sum + day.absent, 0);
+  const totalEmployees = totalPresent + totalAbsent;
 
-// Alternative function name to fix the error
-function calculateAttendanceRate(attendanceTrend: any[]): number {
-  return calculateAttendanceTrend(attendanceTrend);
+  return totalEmployees > 0 ? Math.round((totalPresent / totalEmployees) * 100) : 0;
 }

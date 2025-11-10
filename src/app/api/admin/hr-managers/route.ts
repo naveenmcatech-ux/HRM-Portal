@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -22,7 +22,6 @@ export const userProfiles = pgTable('user_profiles', {
   dateOfBirth: date('date_of_birth'),
   address: text('address'),
   position: varchar('position', { length: 100 }),
-  hireDate: date('hire_date'),
   salary: integer('salary').default(0),
   employeeId: varchar('employee_id', { length: 50 }).unique(),
 });
@@ -42,7 +41,8 @@ export const employees = pgTable('employees', {
   departmentId: uuid('department_id').references(() => departments.id),
   employeeId: varchar('employee_id', { length: 50 }).unique(),
   position: varchar('position', { length: 100 }),
-  hireDate: date('hire_date'),
+  joinDate: date('join_date'),
+  employmentType: varchar('employment_type', { length: 50 }),
   salary: integer('salary').default(0),
   status: varchar('status', { length: 20 }).default('active'),
   isActive: boolean('is_active').default(true),

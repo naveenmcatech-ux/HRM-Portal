@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -109,26 +109,26 @@ export async function POST(request: NextRequest) {
       // Create user
       const [user] = await tx
         .insert(users)
-        .values({
+        .values([{
           email,
           password: hashedPassword,
           role: 'employee',
           isActive: true,
-        })
+        }])
         .returning();
 
       // Create user profile
-      await tx.insert(userProfiles).values({
+      await tx.insert(userProfiles).values([{
         userId: user.id,
         firstName,
         lastName,
         phone,
-      });
+      }]);
 
       // Create employee record
       const [employee] = await tx
         .insert(employees)
-        .values({
+        .values([{
           userId: user.id,
           departmentId,
           position,
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
           salary: salary ? parseInt(salary) : null,
           joinDate: joinDate ? new Date(joinDate) : new Date(),
           status: 'active',
-        })
+        }])
         .returning();
 
       return { user, employee };

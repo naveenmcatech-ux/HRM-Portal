@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database/db';
 import { projects } from '@/lib/database/schema';
-import { eq, count, sum } from 'drizzle-orm';
+import { eq, count, sum, and, sql } from 'drizzle-orm';
 import { verifyToken } from '@/lib/auth/utils';
 
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

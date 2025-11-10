@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     let query = db
       .select({
         id: payroll.id,
-        employeeId: employees.employeeId,
+        employeeId: payroll.employeeId,
         employeeName: sql<string>`CONCAT(${userProfiles.firstName}, ' ', ${userProfiles.lastName})`,
         month: payroll.month,
         year: payroll.year,
@@ -52,9 +52,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    query = query.orderBy(desc(payroll.year), desc(payroll.month));
-
-    const payrollList = await query;
+    const payrollList = await query.orderBy(desc(payroll.year), desc(payroll.month));
 
     return NextResponse.json({
       success: true,
@@ -74,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -94,21 +92,23 @@ export async function POST(request: NextRequest) {
         salary: employees.salary,
       })
       .from(employees)
-      .where(eq(employees.isActive, true));
+      .where(eq(employees.status, 'active'));
 
     const payrollRecords = activeEmployees.map(employee => ({
       employeeId: employee.id,
-      month: parseInt(month),
-      year: parseInt(year),
-      basicSalary: employee.salary,
+      month: month,
+      year: year,
+      basicSalary: employee.salary || 0,
       allowances: 0,
       deductions: 0,
       bonus: 0,
-      netSalary: employee.salary,
+      netSalary: employee.salary || 0,
       status: 'processed',
     }));
 
-    await db.insert(payroll).values(payrollRecords);
+    if (payrollRecords.length > 0) {
+        await db.insert(payroll).values(payrollRecords);
+    }
 
     return NextResponse.json({
       success: true,

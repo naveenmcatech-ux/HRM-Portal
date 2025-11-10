@@ -6,8 +6,7 @@ import {
   TableCellsIcon,
   DocumentArrowDownIcon,
   CalendarIcon,
-  FilterIcon,
-  EyeIcon,
+  
 } from '@heroicons/react/24/outline';
 
 interface ReportData {

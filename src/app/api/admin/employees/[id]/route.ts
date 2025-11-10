@@ -17,7 +17,7 @@ export async function GET(
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -77,7 +77,7 @@ export async function PUT(
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -99,6 +99,14 @@ export async function PUT(
       );
     }
 
+    const userId = employee[0].userId;
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Employee has no associated user.' },
+        { status: 404 }
+      );
+    }
+
     // Update in transaction
     await db.transaction(async (tx) => {
       // Update profile
@@ -110,7 +118,7 @@ export async function PUT(
             ...(lastName && { lastName }),
             ...(phone && { phone }),
           })
-          .where(eq(userProfiles.userId, employee[0].userId));
+          .where(eq(userProfiles.userId, userId));
       }
 
       // Update employee
@@ -151,7 +159,7 @@ export async function DELETE(
     }
 
     const decoded = verifyToken(token);
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -171,12 +179,20 @@ export async function DELETE(
       );
     }
 
+    const userId = employee[0].userId;
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Employee has no associated user.' },
+        { status: 404 }
+      );
+    }
+
     // Deactivate user and employee
     await db.transaction(async (tx) => {
       await tx
         .update(users)
         .set({ isActive: false })
-        .where(eq(users.id, employee[0].userId));
+        .where(eq(users.id, userId));
 
       await tx
         .update(employees)
