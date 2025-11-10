@@ -1,12 +1,26 @@
 {
-  "version": "6",
+  "version": "7",
   "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1762497518213,
-      "tag": "0000_fluffy_dragon_lord",
+      "version": "7",
+      "when": 1762519102217,
+      "tag": "0000_stormy_black_bird",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1762760088903,
+      "tag": "0001_nebulous_mindworm",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762763091176,
+      "tag": "0002_sudden_mastermind",
       "breakpoints": true
     }
   ]

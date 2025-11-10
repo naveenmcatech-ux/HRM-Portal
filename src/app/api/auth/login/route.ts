@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signIn } from '@/lib/auth/utils';
 import { db } from '@/lib/database/db';
-import { users } from '@/lib/database/schema';
+import { users, userProfiles } from '@/lib/database/schema';
 import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
@@ -10,11 +10,18 @@ export async function POST(request: NextRequest) {
 
     // Default admin credentials
     if (username === 'Admin' && password === 'Admin123') {
-      // Check if admin user exists, if not create it
-      let adminUserResult = await db
-        .select()
+      // Check if admin user exists
+      const adminUserResult = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          role: users.role,
+          firstName: userProfiles.firstName,
+          lastName: userProfiles.lastName,
+        })
         .from(users)
-        .where(eq(users.username, 'Admin'))
+        .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .where(eq(users.email, 'admin@hrms.com'))
         .limit(1);
 
       let adminUser;
@@ -22,26 +29,39 @@ export async function POST(request: NextRequest) {
       if (adminUserResult.length === 0) {
         // Create admin user
         const newAdmin = await db.insert(users).values({
-          username: 'Admin',
           email: 'admin@hrms.com',
+          password: 'Admin123', // WARNING: Storing plain text passwords is a security risk.
+          role: 'admin',
+        }).returning({ id: users.id });
+
+        const adminId = newAdmin[0].id;
+
+        await db.insert(userProfiles).values({
+          userId: adminId,
           firstName: 'System',
           lastName: 'Administrator',
-          role: 'admin',
-        }).returning();
-        adminUser = newAdmin[0];
+        });
+
+        adminUser = {
+            username: 'Admin',
+            role: 'admin',
+            firstName: 'System',
+            lastName: 'Administrator'
+        };
       } else {
-        adminUser = adminUserResult[0];
+        const existingUser = adminUserResult[0];
+        adminUser = {
+            username: 'Admin', // The username is hardcoded to 'Admin' for this special login
+            role: existingUser.role,
+            firstName: existingUser.firstName,
+            lastName: existingUser.lastName
+        };
       }
 
-      const response = NextResponse.json({ 
-        success: true, 
+      const response = NextResponse.json({
+        success: true,
         message: 'Login successful',
-        user: {
-          username: adminUser.username,
-          role: adminUser.role,
-          firstName: adminUser.firstName,
-          lastName: adminUser.lastName
-        }
+        user: adminUser
       });
 
       // Set session cookie
@@ -61,6 +81,7 @@ export async function POST(request: NextRequest) {
       { status: 401 }
     );
   } catch (error) {
+    console.error(error);
     const errorMessage = error instanceof Error ? error.message : 'Login failed';
     return NextResponse.json(
       { success: false, message: errorMessage },
